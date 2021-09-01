@@ -34,7 +34,7 @@ class Div(BinaryOp):
     
 
 class Calculator():
-    def __init__(self) -> None:
+    def __init__(self):
         self.lexer = None
         self.parser = None
         self.Build()
@@ -57,12 +57,9 @@ class Calculator():
     
     def Parser(self):
         pg = ParserGenerator(
-            # A list of all token names, accepted by the parser.
             ['NUMBER', 'OPEN_PARENS', 'CLOSE_PARENS',
             'PLUS', 'MINUS', 'MUL', 'DIV'
             ],
-            # A list of precedence rules with ascending precedence, to
-            # disambiguate ambiguous production rules.
             precedence=[
                 ('left', ['PLUS', 'MINUS']),
                 ('left', ['MUL', 'DIV'])
@@ -70,8 +67,6 @@ class Calculator():
         )
         @pg.production('expression : NUMBER')
         def expression_number(p):
-            # p is a list of the pieces matched by the right hand side of the
-            # rule
             return Number(int(p[0].getstr()))
 
         @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
@@ -97,14 +92,32 @@ class Calculator():
                 raise AssertionError('Oops, this should not be possible!')
 
         self.parser = pg.build()
+    
+    def RemoveComments(self, argument):
+        i = 0
+        while i < len(argument)-2:
+            if argument[i:i+2] == "/*":
+                init = i
+                i += 2
+                while (argument[i-2:i] != "*/") and i < len(argument):
+                    if i >= len(argument):
+                        raise
+                    i += 1
+                argument = argument[0:init] + argument[i:len(argument)]
+                i = 0
+            else:
+                i += 1
+        print(argument)
+        return argument
         
     def Calculate(self, argument):
-        print(self.parser.parse(self.lexer.lex(sys.argv[1])).eval())
+        print(self.parser.parse(self.lexer.lex(self.RemoveComments(argument))).eval())
 
 import sys
 def main():
     cal = Calculator()
     cal.Calculate(sys.argv[1])
+    
 
 if __name__ == "__main__":
     main()
