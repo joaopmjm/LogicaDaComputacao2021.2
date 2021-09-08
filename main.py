@@ -1,8 +1,8 @@
-import math
-import numpy as np
-import argparse
 from rply import LexerGenerator, ParserGenerator
 from rply.token import BaseBox
+
+comment_Init = "/*"
+comment_Final = "*/"
 
 class Number(BaseBox):
     def __init__(self, value):
@@ -43,7 +43,7 @@ class Calculator():
     def Build(self):
         lg = LexerGenerator()
 
-        lg.add('NUMBER', r'\d+')
+        lg.add('NUMBER', r'[+,-]?\d+')
         lg.add('PLUS', r'\+')
         lg.add('MINUS', r'-')
         lg.add('MUL', r'\*')
@@ -96,10 +96,10 @@ class Calculator():
     def RemoveComments(self, argument):
         i = 0
         while i < len(argument)-2:
-            if argument[i:i+2] == "/*":
+            if argument[i:i+2] == comment_Init:
                 init = i
                 i += 2
-                while (argument[i-2:i] != "*/") and i < len(argument):
+                while (argument[i-2:i] != comment_Final) and i < len(argument):
                     if i >= len(argument):
                         raise
                     i += 1
@@ -107,7 +107,6 @@ class Calculator():
                 i = 0
             else:
                 i += 1
-        print(argument)
         return argument
         
     def Calculate(self, argument):
