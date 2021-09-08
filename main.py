@@ -110,7 +110,7 @@ class Calculator():
         return argument
         
     def Calculate(self, argument):
-        print(self.parser.parse(self.lexer.lex(self.RemoveComments(argument))).eval())
+        print(int(self.parser.parse(self.lexer.lex(self.RemoveComments(argument))).eval()))
 
 import sys
 def main():
