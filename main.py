@@ -43,7 +43,7 @@ class Calculator():
     def Build(self):
         lg = LexerGenerator()
 
-        lg.add('NUMBER', r'[+,-]?\d+')
+        lg.add('NUMBER', r'\d+')
         lg.add('PLUS', r'\+')
         lg.add('MINUS', r'-')
         lg.add('MUL', r'\*')
