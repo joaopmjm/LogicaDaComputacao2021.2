@@ -43,7 +43,7 @@ class Calculator():
     def Build(self):
         lg = LexerGenerator()
 
-        lg.add('NUMBER', r'[+,-]?\d+')
+        lg.add('NUMBER', r'([+-]+)?\d+')        
         lg.add('PLUS', r'\+')
         lg.add('MINUS', r'-')
         lg.add('MUL', r'\*')
@@ -52,6 +52,7 @@ class Calculator():
         lg.add('CLOSE_PARENS', r'\)')
 
         lg.ignore('\s+')
+        lg.ignore('\*[a-zA-z\s]*\*')
 
         self.lexer = lg.build()
     
@@ -67,7 +68,18 @@ class Calculator():
         )
         @pg.production('expression : NUMBER')
         def expression_number(p):
-            return Number(int(p[0].getstr()))
+            neg = False
+            new_p = 0
+            op = p[0].getstr()
+            for c in op:
+                if c == "-":
+                    neg = not neg
+            op = op.replace("+","")
+            op = op.replace("-","")
+            new_p = int(op)
+            if neg:
+                new_p = -new_p
+            return Number(new_p)
 
         @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
         def expression_parens(p):
