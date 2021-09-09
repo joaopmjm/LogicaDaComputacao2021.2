@@ -43,9 +43,10 @@ class Calculator():
     def Build(self):
         lg = LexerGenerator()
 
-        lg.add('NUMBER', r'\d+')
+
+        lg.add('NUMBER', r'\d+')    
         lg.add('PLUS', r'\+')
-        lg.add('MINUS', r'-')
+        lg.add('MINUS', r'\-')
         lg.add('MUL', r'\*')
         lg.add('DIV', r'/')
         lg.add('OPEN_PARENS', r'\(')
@@ -67,7 +68,18 @@ class Calculator():
         )
         @pg.production('expression : NUMBER')
         def expression_number(p):
-            return Number(int(p[0].getstr()))
+            neg = False
+            new_p = 0
+            op = p[0].getstr()
+            for c in op:
+                if c == "-":
+                    neg = not neg
+            op = op.replace("+","")
+            op = op.replace("-","")
+            new_p = int(op)
+            if neg:
+                new_p = -new_p
+            return Number(new_p)
 
         @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
         def expression_parens(p):
@@ -78,6 +90,7 @@ class Calculator():
         @pg.production('expression : expression MUL expression')
         @pg.production('expression : expression DIV expression')
         def expression_binop(p):
+            print(p)
             left = p[0]
             right = p[2]
             if p[1].gettokentype() == 'PLUS':
