@@ -43,7 +43,7 @@ class Calculator():
     def Build(self):
         lg = LexerGenerator()
 
-        lg.add('NUMBER', r'([+-]+)?\d+')        
+        lg.add('NUMBER', r'\d+')        
         lg.add('PLUS', r'\+')
         lg.add('MINUS', r'-')
         lg.add('MUL', r'\*')
@@ -52,7 +52,6 @@ class Calculator():
         lg.add('CLOSE_PARENS', r'\)')
 
         lg.ignore('\s+')
-        lg.ignore('\*[a-zA-z\s]*\*')
 
         self.lexer = lg.build()
     
@@ -104,25 +103,9 @@ class Calculator():
                 raise AssertionError('Oops, this should not be possible!')
 
         self.parser = pg.build()
-    
-    def RemoveComments(self, argument):
-        i = 0
-        while i < len(argument)-2:
-            if argument[i:i+2] == comment_Init:
-                init = i
-                i += 2
-                while (argument[i-2:i] != comment_Final) and i < len(argument):
-                    if i >= len(argument):
-                        raise
-                    i += 1
-                argument = argument[0:init] + argument[i:len(argument)]
-                i = 0
-            else:
-                i += 1
-        return argument
         
     def Calculate(self, argument):
-        print(self.parser.parse(self.lexer.lex(self.RemoveComments(argument))).eval())
+        print(self.parser.parse(self.lexer.lex(argument)).eval())
 
 import sys
 def main():
