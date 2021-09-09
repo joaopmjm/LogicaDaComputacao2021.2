@@ -90,7 +90,6 @@ class Calculator():
         @pg.production('expression : expression MUL expression')
         @pg.production('expression : expression DIV expression')
         def expression_binop(p):
-            print(p)
             left = p[0]
             right = p[2]
             if p[1].gettokentype() == 'PLUS':
