@@ -95,18 +95,22 @@ class Calculator():
     
     def RemoveComments(self, argument):
         i = 0
+        open = False
         while i < len(argument)-2:
             if argument[i:i+2] == comment_Init:
                 init = i
+                open = True
                 i += 2
                 while (argument[i-2:i] != comment_Final) and i < len(argument):
-                    if i >= len(argument):
-                        raise
                     i += 1
+                if argument[i-2:i] == comment_Final:
+                    open = False
                 argument = argument[0:init] + argument[i:len(argument)]
                 i = 0
             else:
                 i += 1
+        if open:
+            raise TypeError
         return argument
         
     def Calculate(self, argument):
