@@ -1,3 +1,4 @@
+from typing import Counter
 from rply import LexerGenerator, ParserGenerator
 from rply.token import BaseBox
 
@@ -31,6 +32,10 @@ class Mul(BinaryOp):
 class Div(BinaryOp):
     def eval(self):
         return self.left.eval() / self.right.eval()
+
+class Pot(BinaryOp):
+    def eval(self):
+        return self.left.eval() ** self.right.eval()
     
 
 class Calculator():
@@ -44,11 +49,12 @@ class Calculator():
         lg = LexerGenerator()
 
 
-        lg.add('NUMBER', r'\d+')    
-        lg.add('PLUS', r'\+')
-        lg.add('MINUS', r'\-')
+        lg.add('NUMBER', r'\d+')
+        lg.add('PLUS', r'\+([+-]+)?')
+        lg.add('MINUS', r'\-([+-]+)?')
         lg.add('MUL', r'\*')
         lg.add('DIV', r'/')
+        lg.add('POT', r'\^')
         lg.add('OPEN_PARENS', r'\(')
         lg.add('CLOSE_PARENS', r'\)')
 
@@ -59,50 +65,89 @@ class Calculator():
     def Parser(self):
         pg = ParserGenerator(
             ['NUMBER', 'OPEN_PARENS', 'CLOSE_PARENS',
-            'PLUS', 'MINUS', 'MUL', 'DIV'
+            'PLUS', 'MINUS', 'MUL', 'DIV', 'POT'
             ],
             precedence=[
                 ('left', ['PLUS', 'MINUS']),
-                ('left', ['MUL', 'DIV'])
+                ('left', ['MUL', 'DIV']),
+                ('left', ['POT'])
             ]
         )
+        @pg.production('expression : PLUS expression')
+        @pg.production('expression : MINUS expression')
+        def expression_first_unary(p):
+            left = Number(0)             
+            right = p[1]
+            if p[0].gettokentype() == 'PLUS':
+                if len(p[0].getstr()) > 1:
+                    neg = False
+                    for c in p[0].getstr():
+                        if c == '-':
+                            neg = not neg
+                else:
+                    return Add(left, right)
+                if neg:
+                    return Sub(left, right)
+                return Add(left, right)
+            elif p[0].gettokentype() == 'MINUS':
+                if len(p[0].getstr()) > 1:
+                    neg = False
+                    for c in p[0].getstr():
+                        if c == '-':
+                            neg = not neg
+                else:
+                    return Sub(left, right)
+                if neg:
+                    return Sub(left, right)
+                return Add(left, right)
+        
         @pg.production('expression : NUMBER')
         def expression_number(p):
-            neg = False
-            new_p = 0
-            op = p[0].getstr()
-            for c in op:
-                if c == "-":
-                    neg = not neg
-            op = op.replace("+","")
-            op = op.replace("-","")
-            new_p = int(op)
-            if neg:
-                new_p = -new_p
-            return Number(new_p)
-
+            return Number(int(p[0].getstr()))
+        
         @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
         def expression_parens(p):
-            return p[1]
-
+            return p[1]            
+        
         @pg.production('expression : expression PLUS expression')
         @pg.production('expression : expression MINUS expression')
         @pg.production('expression : expression MUL expression')
         @pg.production('expression : expression DIV expression')
+        @pg.production('expression : expression POT expression')
         def expression_binop(p):
-            left = p[0]
+            left = p[0]             
             right = p[2]
             if p[1].gettokentype() == 'PLUS':
+                if len(p[1].getstr()) > 1:
+                    neg = False
+                    for c in p[1].getstr():
+                        if c == '-':
+                            neg = not neg
+                else:
+                    return Add(left, right)
+                if neg:
+                    return Sub(left, right)
                 return Add(left, right)
             elif p[1].gettokentype() == 'MINUS':
-                return Sub(left, right)
+                if len(p[1].getstr()) > 1:
+                    neg = False
+                    for c in p[1].getstr():
+                        if c == '-':
+                            neg = not neg
+                else:
+                    return Sub(left, right)
+                if neg:
+                    return Sub(left, right)
+                return Add(left, right)
             elif p[1].gettokentype() == 'MUL':
                 return Mul(left, right)
             elif p[1].gettokentype() == 'DIV':
                 return Div(left, right)
+            elif p[1].gettokentype() == 'POT':
+                return Pot(left, right)
             else:
                 raise AssertionError('Oops, this should not be possible!')
-
+        
         self.parser = pg.build()
     
     def RemoveComments(self, argument):
@@ -124,7 +169,7 @@ class Calculator():
         if open:
             raise TypeError
         return argument
-        
+    
     def Calculate(self, argument):
         print(int(self.parser.parse(self.lexer.lex(self.RemoveComments(argument))).eval()))
 
