@@ -20,21 +20,21 @@ class Node(BaseBox):
 
 class UnOp(Node):
     def __init__(self, value, child):
-        super().__init__(value)
+        self.value = value
         self.children = [child]
 
 class BinOp(Node):
     def __init__(self, value,left, right):
-        super.__init__(value)
+        self.value = value
         self.children = [left, right]
 
     def eval(self):
         return {
-            SUB:self.left.eval() - self.right.eval(),
-            ADD:self.left.eval() + self.right.eval(),
-            MUL:self.left.eval() * self.right.eval(),
-            DIV:self.left.eval() / self.right.eval(),
-            POT:self.left.eval() ** self.right.eval()
+            SUB:self.children[0].eval() - self.children[1].eval(),
+            ADD:self.children[0].eval() + self.children[1].eval(),
+            MUL:self.children[0].eval() * self.children[1].eval(),
+            DIV:self.children[0].eval() / self.children[1].eval(),
+            POT:self.children[0].eval() ** self.children[1].eval()
         }[self.value]
     
 
@@ -177,7 +177,7 @@ import sys
 def main():
     cal = Calculator()
     root = cal.Calculate(sys.argv[1])
-    print(root.eval())
+    print(int(root.eval()))
 
 if __name__ == "__main__":
     main()
