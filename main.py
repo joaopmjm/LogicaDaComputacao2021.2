@@ -151,6 +151,7 @@ class Calculator():
         self.parser = pg.build()
     
     def RemoveComments(self, argument):
+        argument = argument.replace(" ","")
         i = 0
         open = False
         while i < len(argument)-2:
