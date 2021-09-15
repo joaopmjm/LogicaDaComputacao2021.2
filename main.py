@@ -1,41 +1,41 @@
-from typing import Counter
+from typing import Counter, Match
 from rply import LexerGenerator, ParserGenerator
 from rply.token import BaseBox
 
 comment_Init = "/*"
 comment_Final = "*/"
+ADD = '+'
+SUB = '-'
+MUL = '*'
+DIV = '/'
+POT = '^'
 
-class Number(BaseBox):
+class Node(BaseBox):
     def __init__(self, value):
         self.value = value
+        self.children = []
 
     def eval(self):
         return self.value
 
-class BinaryOp(BaseBox):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
+class UnOp(Node):
+    def __init__(self, value, child):
+        super().__init__(value)
+        self.children = [child]
 
-class Add(BinaryOp):
-    def eval(self):
-        return self.left.eval() + self.right.eval()
+class BinOp(Node):
+    def __init__(self, value,left, right):
+        super.__init__(value)
+        self.children = [left, right]
 
-class Sub(BinaryOp):
     def eval(self):
-        return self.left.eval() - self.right.eval()
-
-class Mul(BinaryOp):
-    def eval(self):
-        return self.left.eval() * self.right.eval()
-
-class Div(BinaryOp):
-    def eval(self):
-        return self.left.eval() / self.right.eval()
-
-class Pot(BinaryOp):
-    def eval(self):
-        return self.left.eval() ** self.right.eval()
+        return {
+            SUB:self.left.eval() - self.right.eval(),
+            ADD:self.left.eval() + self.right.eval(),
+            MUL:self.left.eval() * self.right.eval(),
+            DIV:self.left.eval() / self.right.eval(),
+            POT:self.left.eval() ** self.right.eval()
+        }[self.value]
     
 
 class Calculator():
@@ -76,7 +76,7 @@ class Calculator():
         @pg.production('expression : PLUS expression')
         @pg.production('expression : MINUS expression')
         def expression_first_unary(p):
-            left = Number(0)             
+            left = Node(0)             
             right = p[1]
             if p[0].gettokentype() == 'PLUS':
                 if len(p[0].getstr()) > 1:
@@ -85,10 +85,10 @@ class Calculator():
                         if c == '-':
                             neg = not neg
                 else:
-                    return Add(left, right)
+                    return BinOp(ADD,left, right)
                 if neg:
-                    return Sub(left, right)
-                return Add(left, right)
+                    return BinOp(SUB,left, right)
+                return BinOp(ADD, left, right)
             elif p[0].gettokentype() == 'MINUS':
                 if len(p[0].getstr()) > 1:
                     neg = False
@@ -96,14 +96,14 @@ class Calculator():
                         if c == '-':
                             neg = not neg
                 else:
-                    return Sub(left, right)
+                    return BinOp(SUB,left, right)
                 if neg:
-                    return Sub(left, right)
-                return Add(left, right)
+                    return BinOp(SUB,left, right)
+                return BinOp(ADD,left, right)
         
         @pg.production('expression : NUMBER')
         def expression_number(p):
-            return Number(int(p[0].getstr()))
+            return Node(int(p[0].getstr()))
         
         @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
         def expression_parens(p):
@@ -124,10 +124,10 @@ class Calculator():
                         if c == '-':
                             neg = not neg
                 else:
-                    return Add(left, right)
+                    return BinOp(ADD,left, right)
                 if neg:
-                    return Sub(left, right)
-                return Add(left, right)
+                    return BinOp(SUB,left, right)
+                return BinOp(ADD,left, right)
             elif p[1].gettokentype() == 'MINUS':
                 if len(p[1].getstr()) > 1:
                     neg = False
@@ -135,16 +135,16 @@ class Calculator():
                         if c == '-':
                             neg = not neg
                 else:
-                    return Sub(left, right)
+                    return BinOp(SUB,left, right)
                 if neg:
-                    return Sub(left, right)
-                return Add(left, right)
+                    return BinOp(SUB,left, right)
+                return BinOp(ADD, left, right)
             elif p[1].gettokentype() == 'MUL':
-                return Mul(left, right)
+                return BinOp(MUL,left, right)
             elif p[1].gettokentype() == 'DIV':
-                return Div(left, right)
+                return BinOp(DIV,left, right)
             elif p[1].gettokentype() == 'POT':
-                return Pot(left, right)
+                return BinOp(POT,left, right)
             else:
                 raise AssertionError('Oops, this should not be possible!')
         
@@ -171,13 +171,13 @@ class Calculator():
         return argument
     
     def Calculate(self, argument):
-        print(int(self.parser.parse(self.lexer.lex(self.RemoveComments(argument))).eval()))
+        return self.parser.parse(self.lexer.lex(self.RemoveComments(argument)))
 
 import sys
 def main():
     cal = Calculator()
-    cal.Calculate(sys.argv[1])
-    
+    root = cal.Calculate(sys.argv[1])
+    print(root.eval())
 
 if __name__ == "__main__":
     main()
