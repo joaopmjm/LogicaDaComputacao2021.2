@@ -1,3 +1,4 @@
+from os import remove
 from typing import Counter, Match
 from rply import LexerGenerator, ParserGenerator
 from rply.token import BaseBox
@@ -101,6 +102,10 @@ class Calculator():
                     return BinOp(SUB,left, right)
                 return BinOp(ADD,left, right)
         
+        @pg.production('expression : NUMBER NUMBER')
+        def expression_exception(p):
+            raise ValueError
+
         @pg.production('expression : NUMBER')
         def expression_number(p):
             return Node(int(p[0].getstr()))
@@ -150,8 +155,30 @@ class Calculator():
         
         self.parser = pg.build()
     
+    def RemoveSpaces(self, argument):
+        SPACE = " "
+        while argument[0] == SPACE:
+            argument = argument[1:len(argument)]
+        while argument[-1] == SPACE:
+            argument = argument[0:len(argument)-1]
+        ops = {
+            0:['+','-'],
+            1:['*','/','^']
+        }
+        while argument.find(SPACE*2, 0, len(argument)) != -1:
+            argument = argument.replace(SPACE*2, SPACE)
+        
+        c = 0
+        while c < len(argument):
+            if argument[c] == SPACE:
+                if (argument[c-1].isnumeric and argument[c+1].isnumeric) or \
+                (ops[0].find(argument[c+1], 0, len(argument))!=-1 and ops[0].find(argument[c+1],0, len(argument))!=-1) or \
+                (ops[1].find(argument[c-1], 0, len(argument))!=-1 and ops[1].find(argument[c+1],0,len(argument))!=-1):
+                    argument = argument[0 : c :] + argument[c + 1 : :]
+            c += 1
+        return argument
+    
     def RemoveComments(self, argument):
-        argument = argument.replace(" ","")
         i = 0
         open = False
         while i < len(argument)-2:
@@ -169,7 +196,8 @@ class Calculator():
                 i += 1
         if open:
             raise TypeError
-        return argument
+        
+        return self.RemoveSpaces(argument)
     
     def Calculate(self, argument):
         return self.parser.parse(self.lexer.lex(self.RemoveComments(argument)))
