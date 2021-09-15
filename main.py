@@ -171,9 +171,8 @@ class Calculator():
         c = 0
         while c < len(argument):
             if argument[c] == SPACE:
-                if (argument[c-1].isnumeric and argument[c+1].isnumeric) or \
-                (ops[0].find(argument[c+1], 0, len(argument))!=-1 and ops[0].find(argument[c+1],0, len(argument))!=-1) or \
-                (ops[1].find(argument[c-1], 0, len(argument))!=-1 and ops[1].find(argument[c+1],0,len(argument))!=-1):
+                if ((argument[c-1] in ops[0] and argument[c+1] in ops[0]) or \
+                (argument[c-1] in ops[1] and argument[c+1] in ops[1])):
                     argument = argument[0 : c :] + argument[c + 1 : :]
             c += 1
         return argument
