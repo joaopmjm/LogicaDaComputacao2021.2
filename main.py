@@ -1,5 +1,6 @@
 from os import remove
 from typing import Counter, Match
+from typing_extensions import IntVar
 from rply import LexerGenerator, ParserGenerator
 from rply.token import BaseBox
 
@@ -16,6 +17,13 @@ class Node(BaseBox):
         self.value = value
         self.children = []
 
+    def eval(self):
+        return self.value
+
+class IntVal(Node):
+    def __init__(self, value):
+        self.value = value
+    
     def eval(self):
         return self.value
 
@@ -76,8 +84,8 @@ class Calculator():
         )
         @pg.production('expression : PLUS expression')
         @pg.production('expression : MINUS expression')
-        def expression_first_unary(p):
-            left = Node(0)             
+        def expression_unary(p):
+            left = IntVal(0)             
             right = p[1]
             if p[0].gettokentype() == 'PLUS':
                 if len(p[0].getstr()) > 1:
@@ -108,7 +116,7 @@ class Calculator():
 
         @pg.production('expression : NUMBER')
         def expression_number(p):
-            return Node(int(p[0].getstr()))
+            return IntVal(int(p[0].getstr()))
         
         @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
         def expression_parens(p):
