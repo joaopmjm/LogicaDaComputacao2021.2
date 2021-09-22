@@ -1,4 +1,4 @@
-from os import chmod, remove
+from os import chmod, remove, truncate
 from typing import Counter, Match
 from typing_extensions import IntVar
 from rply import LexerGenerator, ParserGenerator
@@ -256,8 +256,15 @@ class Program():
     
     
 def main():
+    holeCode = ""
+    while(True):
+        try :
+            holeCode += input()
+        except EOFError:
+            break
+    
     prog = Program()
-    prog.Run(sys.argv[1])
+    prog.Run(holeCode)
 
 if __name__ == "__main__":
     main()
