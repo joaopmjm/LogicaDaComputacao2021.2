@@ -1,5 +1,5 @@
 from os import chmod, remove, truncate
-from typing import Counter, Match
+from typing import Counter, Match, Type
 from typing_extensions import IntVar
 from rply import LexerGenerator, ParserGenerator
 from rply.token import BaseBox
@@ -218,6 +218,7 @@ class Program():
     
     def Build(self, program):
         program = program.replace("\n", "")
+        program = self.RemoveComments(program)
         self.commands = program.split(';')
         
     def Run(self, prog):
@@ -227,6 +228,29 @@ class Program():
                 self.Println(command)
             elif("=" in command):
                 self.Attribuition(command)
+            else:
+                raise ValueError
+    
+    def RemoveComments(self, argument):
+        i = 0
+        open = False
+        while i < len(argument)-2:
+            if argument[i:i+2] == comment_Init:
+                init = i
+                open = True
+                i += 2
+                while (argument[i-2:i] != comment_Final) and i < len(argument):
+                    i += 1
+                if argument[i-2:i] == comment_Final:
+                    open = False
+                argument = argument[0:init] + argument[i:len(argument)]
+                i = 0
+            else:
+                i += 1
+        if open:
+            raise TypeError
+        
+        return argument
     
     def PrepareExpression(self, expression):
         for var in self.variables.keys():
@@ -251,15 +275,46 @@ class Program():
                 print(self.variables[command])
             else:
                 print(self.CalculateExpression(command))
+        else:
+            raise ValueError
         
-    
+def PrepareInput(argument):
+    if argument == '': return argument
+    while argument[0] == ' ':
+        argument = argument[1:]
+    i = 0
+    open = False
+    while i < len(argument)-2:
+        if argument[i:i+2] == comment_Init:
+            init = i
+            open = True
+            i += 2
+            while (argument[i-2:i] != comment_Final) and i < len(argument):
+                i += 1
+            if argument[i-2:i] == comment_Final:
+                open = False
+            argument = argument[0:init] + argument[i:len(argument)]
+            i = 0
+        else:
+            i += 1
+    if open:
+        raise TypeError
+    if argument.find(';') == -1:
+        raise ValueError
+    if argument.find(';') < (len(argument)-1):
+        for i in argument[argument.find(';')+1:]:
+            if i != ' ':
+                raise ValueError
+    return argument
     
     
 def main():
     holeCode = ""
     while(True):
         try :
-            holeCode += input()
+            i = input()
+            i = PrepareInput(i)
+            holeCode += i
         except EOFError:
             break
     
