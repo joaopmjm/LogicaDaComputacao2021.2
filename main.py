@@ -228,9 +228,7 @@ class Program():
                 self.Println(command)
             elif("=" in command):
                 self.Attribuition(command)
-            else:
-                raise ValueError
-    
+            
     def RemoveComments(self, argument):
         i = 0
         open = False
@@ -313,8 +311,9 @@ def main():
     while(True):
         try :
             i = input()
-            i = PrepareInput(i)
-            holeCode += i
+            if not i.isspace():
+                i = PrepareInput(i)
+                holeCode += i
         except EOFError:
             break
     
