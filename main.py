@@ -1,8 +1,10 @@
-from os import remove
+from os import chmod, remove
 from typing import Counter, Match
 from typing_extensions import IntVar
 from rply import LexerGenerator, ParserGenerator
 from rply.token import BaseBox
+import sys
+
 
 comment_Init = "/*"
 comment_Final = "*/"
@@ -56,7 +58,6 @@ class Calculator():
         
     def Build(self):
         lg = LexerGenerator()
-
 
         lg.add('NUMBER', r'\d+')
         lg.add('PLUS', r'\+([+-]+)?')
@@ -209,11 +210,54 @@ class Calculator():
     def Calculate(self, argument):
         return self.parser.parse(self.lexer.lex(self.RemoveComments(argument)))
 
-import sys
+class Program():
+    def __init__(self):
+        self.commands = []
+        self.variables = {}
+        self.cal = Calculator()
+    
+    def Build(self, program):
+        program = program.replace("\n", "")
+        self.commands = program.split(';')
+        
+    def Run(self, prog):
+        self.Build(prog)
+        for command in self.commands:
+            if(command.startswith("println")):
+                self.Println(command)
+            elif("=" in command):
+                self.Attribuition(command)
+    
+    def PrepareExpression(self, expression):
+        for var in self.variables.keys():
+            if var in expression:
+                expression = expression.replace(var, str(self.variables[var]))
+        return expression
+            
+    def Attribuition(self, command):
+        var_name, expression = command.split('=')
+        var_name = var_name.replace(' ','')
+        self.variables[var_name] = self.CalculateExpression(self.PrepareExpression(expression))
+                
+    def CalculateExpression(self, expression):
+        root = self.cal.Calculate(expression)
+        return int(root.eval())
+    
+    def Println(self, command):
+        command = command[7:]
+        if(command[0] == '(' and command[-1] == ')'):
+            command = command[1:-1]
+            if(command in self.variables.keys()):
+                print(self.variables[command])
+            else:
+                print(self.CalculateExpression(command))
+        
+    
+    
+    
 def main():
-    cal = Calculator()
-    root = cal.Calculate(sys.argv[1])
-    print(int(root.eval()))
+    prog = Program()
+    prog.Run(sys.argv[1])
 
 if __name__ == "__main__":
     main()
