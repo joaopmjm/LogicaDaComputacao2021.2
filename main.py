@@ -307,18 +307,8 @@ def PrepareInput(argument):
     
     
 def main():
-    holeCode = ""
-    while(True):
-        try :
-            i = input()
-            if not i.isspace():
-                i = PrepareInput(i)
-                holeCode += i
-        except EOFError:
-            break
-    
     prog = Program()
-    prog.Run(holeCode)
+    prog.Run(PrepareInput(sys.argv[1]))
 
 if __name__ == "__main__":
     main()
