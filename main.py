@@ -1,5 +1,5 @@
 from os import chmod, remove, truncate
-from typing import Counter, Match, Type
+from typing import Counter, Match, Type, ValuesView
 from typing_extensions import IntVar
 from rply import LexerGenerator, ParserGenerator
 from rply.token import BaseBox
@@ -219,6 +219,7 @@ class Program():
     def Build(self, program):
         program = program.replace("\n", "")
         program = self.RemoveComments(program)
+        if(';' not in program): raise ValueError
         self.commands = program.split(';')
         self.PrepareInput()
         
@@ -272,6 +273,7 @@ class Program():
             
     def Attribuition(self, command):
         var_name, expression = command.split('=')
+        if var_name[0].isnumeric(): raise ValueError
         var_name = var_name.replace(' ','')
         self.variables[var_name] = self.CalculateExpression(self.PrepareExpression(expression))
                 
