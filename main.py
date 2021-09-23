@@ -299,16 +299,18 @@ def PrepareInput(argument):
         raise TypeError
     if argument.find(';') == -1:
         raise ValueError
-    if argument.find(';') < (len(argument)-1):
-        for i in argument[argument.find(';')+1:]:
-            if i != ' ':
-                raise ValueError
     return argument
     
     
 def main():
+    code = ""
+    file = sys.argv[1]
+    with open(file) as f:
+        for line in f:
+            if not line.isspace():
+                code += line[:-1]
     prog = Program()
-    prog.Run(PrepareInput(sys.argv[1]))
+    prog.Run(PrepareInput(code))
 
 if __name__ == "__main__":
     main()
