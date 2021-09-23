@@ -220,18 +220,28 @@ class Program():
         program = program.replace("\n", "")
         program = self.RemoveComments(program)
         self.commands = program.split(';')
+        self.PrepareInput()
         
     def Run(self, prog):
         self.Build(prog)
         for command in self.commands:
             if(command.startswith("println")):
                 self.Println(command)
-            elif("=" in command):
+            elif('=' in command):
                 self.Attribuition(command)
-            elif(command.isspace()):
-                continue
-            else:
+            elif not command.isspace() and len(command)>0:
                 raise ValueError
+    
+    def PrepareInput(self):
+        to_be_removed = []
+        for i in range(len(self.commands)):
+            if self.commands[i].isspace() and len(self.commands[i])<=0: 
+                to_be_removed.append(i)
+            else:
+                while self.commands[i].startswith(' '):
+                    self.commands[i] = self.commands[i][1:]
+        for i in range(len(to_be_removed)-1,0,-1):
+            del self.commands[to_be_removed[i]]
             
     def RemoveComments(self, argument):
         i = 0
@@ -279,42 +289,10 @@ class Program():
                 print(self.CalculateExpression(command))
         else:
             raise ValueError
-        
-def PrepareInput(argument):
-    if argument == '': return argument
-    while argument[0] == ' ':
-        argument = argument[1:]
-    i = 0
-    open = False
-    while i < len(argument)-2:
-        if argument[i:i+2] == comment_Init:
-            init = i
-            open = True
-            i += 2
-            while (argument[i-2:i] != comment_Final) and i < len(argument):
-                i += 1
-            if argument[i-2:i] == comment_Final:
-                open = False
-            argument = argument[0:init] + argument[i:len(argument)]
-            i = 0
-        else:
-            i += 1
-    if open:
-        raise TypeError
-    if argument.find(';') == -1:
-        raise ValueError
-    return argument
-    
     
 def main():
-    # code = ""
-    # file = 
-    # with open(file) as f:
-    #     for line in f:
-    #         if not line.isspace():
-    #             code += line[:-1]
     prog = Program()
-    prog.Run(PrepareInput(sys.argv[1]))
+    prog.Run(sys.argv[1])
 
 if __name__ == "__main__":
     main()
