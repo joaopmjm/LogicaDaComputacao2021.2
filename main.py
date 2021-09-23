@@ -228,6 +228,10 @@ class Program():
                 self.Println(command)
             elif("=" in command):
                 self.Attribuition(command)
+            elif(command.isspace()):
+                continue
+            else:
+                raise ValueError
             
     def RemoveComments(self, argument):
         i = 0
