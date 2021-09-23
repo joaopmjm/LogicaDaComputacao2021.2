@@ -303,14 +303,14 @@ def PrepareInput(argument):
     
     
 def main():
-    code = ""
-    file = sys.argv[1]
-    with open(file) as f:
-        for line in f:
-            if not line.isspace():
-                code += line[:-1]
+    # code = ""
+    # file = 
+    # with open(file) as f:
+    #     for line in f:
+    #         if not line.isspace():
+    #             code += line[:-1]
     prog = Program()
-    prog.Run(PrepareInput(code))
+    prog.Run(PrepareInput(sys.argv[1]))
 
 if __name__ == "__main__":
     main()
