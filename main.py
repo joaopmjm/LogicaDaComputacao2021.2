@@ -38,6 +38,8 @@ class Program():
                 self.Println(command)
             elif(self.GetCommandType(command) == "if"):
                 i = self.IfCommand(i)
+            elif(self.GetCommandType(command) == "while"):
+                i = self.WhileCommand(i)
             elif(command == "}"):
                 return i
             elif('=' in command):
@@ -83,12 +85,10 @@ class Program():
     def WhileCommand(self, i):
         command = self.commands[i]
         if(not ct.ParentesisEquilized(command)): raise ValueError
-        if(command.endswith("{")):
-            while(self.expResolver.Calculate(self.GetExpression(i)).eval()):
-                i = self.Runner(i)
-            return i
-        else:
-            raise ValueError
+        start = i+1
+        while(self.expResolver.Calculate(self.GetExpression(i)).eval()):
+             self.Runner(start)
+        return self.GetEndOfBrackets(i)
         
     def Println(self, command):
         command = command[7:]
