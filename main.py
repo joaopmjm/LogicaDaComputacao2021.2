@@ -23,7 +23,12 @@ class Program():
         blocos = program.split('{')
         for bloco in blocos:
             for command in bloco.split(';'):
-                self.commands.append(command)
+                command = ct.RemoveSpaces(command)
+                if command.startswith("}"): 
+                    self.commands.append("}")
+                    self.commands.append(command[1:])
+                else:
+                    self.commands.append(command)
         self.PrepareInput()
         
     def Run(self, prog):
@@ -40,12 +45,15 @@ class Program():
                 i = self.IfCommand(i)
             elif(self.GetCommandType(command) == "while"):
                 i = self.WhileCommand(i)
+            elif("else" in self.commands[i]):
+                pass
             elif(command == "}"):
                 return i
             elif('=' in command):
                 self.Attribuition(command)
             elif not command.isspace() and len(command)>0:
                 print("Error with command",command)
+                print(self.commands)
                 raise ValueError
             i += 1
             
@@ -58,6 +66,7 @@ class Program():
         if command_type != None:
             for key in ["if","while","println"]:
                 command = command.replace(key,"")
+            command = ct.RemoveSpaces(command)
             if(command[0] != "(" or command[-1] != ")"): raise SyntaxError
         return command_type
 
@@ -76,11 +85,16 @@ class Program():
     def IfCommand(self, i):
         command = self.commands[i]
         if(not ct.ParentesisEquilized(command)): raise ValueError
+        end = self.GetEndOfBrackets(i)
         if(self.expResolver.Calculate(self.GetExpression(i)).eval()):
-            return self.Runner(i+1)
+            i = self.Runner(i+1)
+            if ct.RemoveSpaces(self.commands[end+1]).startswith("else"):
+                return self.GetEndOfBrackets(i+1)
+            return i
+        elif ct.RemoveSpaces(self.commands[end+1]).startswith("else"):
+            return self.Runner(end+1)
         else:
-            return self.GetEndOfBrackets(i)
-        return i
+            return end
     
     def WhileCommand(self, i):
         command = self.commands[i]

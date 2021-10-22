@@ -65,8 +65,8 @@ class ExpressionResolver():
     def Build(self):
         lg = LexerGenerator()
 
-        lg.add('NUMBER', r'\d+([-+*/^]d+)?')
-        lg.add('AND', r'\[&&]')
+        lg.add('NUMBER', r'[+-]?\d+')
+        lg.add('AND', r'\&\&')
         lg.add('OR', r'\|\|')
         lg.add('EQ', r'\==')
         lg.add('DIF', r'\!=')
