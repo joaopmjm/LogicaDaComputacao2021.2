@@ -10,14 +10,6 @@ SUB = '-'
 MUL = '*'
 DIV = '/'
 POT = '^'
-AND = '&&'
-OR = '||'
-EQ = '=='
-DIF = '!='
-GET = '>='
-LET = '<='
-GT = '>'
-LT = '<'
 
 class Node(BaseBox):
     def __init__(self, value):

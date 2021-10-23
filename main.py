@@ -48,8 +48,6 @@ class Program():
                 i = self.IfCommand(i)
             elif(self.GetCommandType(command) == "while"):
                 i = self.WhileCommand(i)
-            elif("else" in self.commands[i]):
-                pass
             elif(command == "}"):
                 return i
             elif('=' in command):
@@ -94,7 +92,7 @@ class Program():
                 return self.GetEndOfBrackets(i)
             return i
         elif ct.RemoveSpaces(self.commands[end+1]).startswith("else"):
-            return self.Runner(end+1)
+            return self.Runner(end+2)
         else:
             return end
     

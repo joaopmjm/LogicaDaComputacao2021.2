@@ -9,6 +9,7 @@ comment_Init = "/*"
 comment_Final = "*/"
 start_bracket = '{'
 end_bracket = '}'
+NOT = '!'
 ADD = '+'
 SUB = '-'
 MUL = '*'
@@ -38,6 +39,12 @@ class IntVal(Node):
     def eval(self):
         return self.value
 
+class Not(Node):
+  def __init__(self, value):
+    self.value = value
+  def eval(self):
+    return not self.value
+
 class BinExp(Node):
     def __init__(self, value, left, right):
         self.value = value
@@ -66,6 +73,7 @@ class ExpressionResolver():
         lg = LexerGenerator()
 
         lg.add('NUMBER', r'[+-]?\d+')
+        lg.add('NOT', r'\!')
         lg.add('AND', r'\&\&')
         lg.add('OR', r'\|\|')
         lg.add('EQ', r'\==')
@@ -83,10 +91,11 @@ class ExpressionResolver():
     
     def Parser(self):
         pg = ParserGenerator(
-            ['NUMBER', 'OPEN_PARENS', 'CLOSE_PARENS', 'AND', 'OR', 'EQ', 
+            ['NUMBER', 'OPEN_PARENS', 'CLOSE_PARENS','NOT', 'AND', 'OR', 'EQ', 
              'DIF', 'GET', 'LET', 'GT', 'LT'
             ],
             precedence=[
+                ('left', ['NOT']),
                 ('left', ['AND', 'OR', 'EQ', 
                     'DIF', 'GET', 'LET']),
                 ('left', ['GT', 'LT'])
@@ -114,6 +123,10 @@ class ExpressionResolver():
         @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
         def expression_parens(p):
             return p[1]           
+        
+        @pg.production('expression : NOT expression')
+        def expression_not(p):
+          return Not(p[1].eval())
         
         @pg.production('expression : expression AND expression')
         @pg.production('expression : expression OR expression')
