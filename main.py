@@ -36,10 +36,9 @@ class Program():
         
     def Run(self, prog):
         self.Build(prog)
-        i = 0
-        self.Runner(i)
+        self.Runner()
     
-    def Runner(self, i):
+    def Runner(self, i=0):
         while i < len(self.commands):
             command = self.commands[i]
             if(self.GetCommandType(command) == "println"):
@@ -56,6 +55,15 @@ class Program():
                 print("Error with command",command)
                 raise ValueError
             i += 1
+    
+    def instruction(self, command):
+        if(self.GetCommandType(command) == "println"):
+            self.Println(command)
+        elif('=' in command):
+            self.Attribuition(command)
+        elif not command.isspace() and len(command)>0:
+            print("Error with command",command)
+            raise ValueError
             
     def GetCommandType(self, command):
         command_type = None
@@ -86,7 +94,11 @@ class Program():
         command = self.commands[i]
         if(not ct.ParentesisEquilized(command)): raise ValueError
         end = self.GetEndOfBrackets(i)
-        if(self.expResolver.Calculate(self.GetExpression(i)).eval()):
+        if ct.IsBracketlessIf(command)[0]:
+            if self.expResolver.Calculate(ct.GetIfExpression(command)).eval():
+                self.instruction(ct.IsBracketlessIf(command)[1])
+            return i
+        elif self.expResolver.Calculate(self.GetExpression(self.commands[i])).eval():
             i = self.Runner(i+1)
             if ct.RemoveSpaces(self.commands[end+1]).startswith("else"):
                 return self.GetEndOfBrackets(i)
@@ -100,7 +112,7 @@ class Program():
         command = self.commands[i]
         if(not ct.ParentesisEquilized(command)): raise ValueError
         start = i+1
-        while(self.expResolver.Calculate(self.GetExpression(i)).eval()):
+        while(self.expResolver.Calculate(self.GetExpression(self.commands[i])).eval()):
              self.Runner(start)
         return self.GetEndOfBrackets(i)
         
@@ -110,7 +122,7 @@ class Program():
             command = self.ReplaceVars(command[1:-1])
             print(self.CalculateExpression(command))
         else:
-            raise ValueError
+            raise ValueError            
     
     def GetEndOfBrackets(self, i):
         brackets_opened = 1
@@ -124,8 +136,8 @@ class Program():
             i += 1
         return i-1
     
-    def GetExpression(self, i):
-        return self.ReplaceVars(self.commands[i][self.commands[i].index('(')+1:-1])
+    def GetExpression(self, command):
+        return self.ReplaceVars(command[command.index('(')+1:-1])
     
     def ReplaceVars(self, command):
         for var in self.variables.keys():
