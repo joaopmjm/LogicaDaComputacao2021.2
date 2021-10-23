@@ -27,7 +27,7 @@ class Program():
                 if command.startswith("}"): 
                     while command.startswith("}"):
                         self.commands.append("}")
-                        command = command[1:]
+                        command = ct.RemoveSpaces(command[1:])
                     if not command == '':
                         self.commands.append(command)
                 else:
