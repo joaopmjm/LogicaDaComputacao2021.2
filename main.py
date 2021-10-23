@@ -25,8 +25,11 @@ class Program():
             for command in bloco.split(';'):
                 command = ct.RemoveSpaces(command)
                 if command.startswith("}"): 
-                    self.commands.append("}")
-                    self.commands.append(command[1:])
+                    while command.startswith("}"):
+                        self.commands.append("}")
+                        command = command[1:]
+                    if not command == '':
+                        self.commands.append(command)
                 else:
                     self.commands.append(command)
         self.PrepareInput()
@@ -53,7 +56,6 @@ class Program():
                 self.Attribuition(command)
             elif not command.isspace() and len(command)>0:
                 print("Error with command",command)
-                print(self.commands)
                 raise ValueError
             i += 1
             
@@ -89,7 +91,7 @@ class Program():
         if(self.expResolver.Calculate(self.GetExpression(i)).eval()):
             i = self.Runner(i+1)
             if ct.RemoveSpaces(self.commands[end+1]).startswith("else"):
-                return self.GetEndOfBrackets(i+1)
+                return self.GetEndOfBrackets(i)
             return i
         elif ct.RemoveSpaces(self.commands[end+1]).startswith("else"):
             return self.Runner(end+1)
@@ -117,12 +119,12 @@ class Program():
         i += 1
         while brackets_opened > 0:
             if i >= len(self.commands):
-                print(self.commands, i, len(self.commands))
                 raise IndentationError
-            if any(command in ["if", "while"] for command in self.commands[i]): brackets_opened += 1
-            if "}" in ct.RemoveSpaces(self.commands[i]): brackets_opened -= 1
+            elif "if" in self.commands[i] or "while" in self.commands[i]:
+                brackets_opened += 1
+            elif "}" in ct.RemoveSpaces(self.commands[i]): brackets_opened -= 1
             i += 1
-        return i
+        return i-1
     
     def GetExpression(self, i):
         return self.ReplaceVars(self.commands[i][self.commands[i].index('(')+1:-1])
