@@ -14,7 +14,7 @@ class Program():
         self.variables = {}
         self.cal = Calculator()
         self.expResolver = ExpressionResolver()
-        self.ReservedNames = ["if","while","println","readln"]
+        self.ReservedNames = ["if","while","println","readln", "for"]
     
     def Build(self, program):
         program = program.replace("\n", "")
@@ -22,16 +22,19 @@ class Program():
         if(';' not in program): raise ValueError
         blocos = program.split('{')
         for bloco in blocos:
-            for command in bloco.split(';'):
-                command = ct.RemoveSpaces(command)
-                if command.startswith("}"): 
-                    while command.startswith("}"):
-                        self.commands.append("}")
-                        command = ct.RemoveSpaces(command[1:])
-                    if not command == '':
+            if ct.RemoveSpaces(bloco).startswith("for"):
+                self.commands.append(ct.RemoveSpaces(bloco))
+            else:
+                for command in bloco.split(';'):
+                    command = ct.RemoveSpaces(command)
+                    if command.startswith("}"): 
+                        while command.startswith("}"):
+                            self.commands.append("}")
+                            command = ct.RemoveSpaces(command[1:])
+                        if not command == '':
+                            self.commands.append(command)
+                    else:
                         self.commands.append(command)
-                else:
-                    self.commands.append(command)
         self.PrepareInput()
         
     def Run(self, prog):
@@ -47,6 +50,8 @@ class Program():
                 i = self.IfCommand(i)
             elif(self.GetCommandType(command) == "while"):
                 i = self.WhileCommand(i)
+            elif(self.GetCommandType(command) == "for"):
+                i = self.ForCommand(i)
             elif(command == "}"):
                 return i
             elif('=' in command):
@@ -67,12 +72,12 @@ class Program():
             
     def GetCommandType(self, command):
         command_type = None
+        possible_commands = ["if","while","println","for"]
         command = ct.RemoveSpaces(command)
-        if(command.startswith("if")): command_type = "if"
-        if(command.startswith("while")): command_type = "while"
-        if(command.startswith("println")): command_type = "println"
+        for pc in possible_commands:
+            if(command.startswith(pc)): command_type = pc
         if command_type != None:
-            for key in ["if","while","println"]:
+            for key in possible_commands:
                 command = command.replace(key,"")
             command = ct.RemoveSpaces(command)
             if(command[0] != "(" or command[-1] != ")"): raise SyntaxError
@@ -86,7 +91,7 @@ class Program():
         if(expression.startswith("readln")):
             self.variables[var_name] = int(input())
         else:    
-            self.variables[var_name] = self.CalculateExpression(self.PrepareExpression(expression))
+            self.variables[var_name] = self.CalculateExpression(self.ReplaceVars(expression))
         for k in sorted(self.variables, key=len, reverse=True):
             self.variables[k] = self.variables[k]
     
@@ -115,6 +120,14 @@ class Program():
         while(self.expResolver.Calculate(self.GetExpression(self.commands[i])).eval()):
              self.Runner(start)
         return self.GetEndOfBrackets(i)
+
+    def ForCommand(self, i):
+        command = self.commands[i]
+        self.Attribuition(self.GetExpression(command, True).split(";")[0])
+        while(self.expResolver.Calculate(self.GetExpression(command).split(";")[1]).eval()):
+            self.Runner(i+1)
+            self.instruction(self.GetExpression(command, True).split(";")[2])
+        return self.GetEndOfBrackets(i)
         
     def Println(self, command):
         command = command[7:]
@@ -136,7 +149,9 @@ class Program():
             i += 1
         return i-1
     
-    def GetExpression(self, command):
+    def GetExpression(self, command, varless=False):
+        if varless:
+            return command[command.index('(')+1:-1]
         return self.ReplaceVars(command[command.index('(')+1:-1])
     
     def ReplaceVars(self, command):
@@ -175,12 +190,6 @@ class Program():
             raise TypeError
         
         return argument
-    
-    def PrepareExpression(self, expression):
-        for var in self.variables.keys():
-            if var in expression:
-                expression = expression.replace(var, str(self.variables[var]))
-        return expression
                 
     def CalculateExpression(self, expression):
         root = self.cal.Calculate(expression)
