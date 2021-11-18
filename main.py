@@ -1,12 +1,66 @@
 from os import chmod, remove, replace, truncate
-from typing import Counter, Match, Type, ValuesView
-from typing_extensions import IntVar
-from rply import LexerGenerator, ParserGenerator
-from rply.token import BaseBox
 import command_tools as ct
 from Calculator import *
+from typing import Counter, Match, Type, ValuesView
+from typing_extensions import IntVar
+from rply.token import BaseBox
 from ExpressionResolver import *
 import sys
+
+ST={}
+
+class Visitor(object):
+  pass
+
+class SymbolTable(Visitor):
+    def visit_prog(self, prog):
+        prog.decls.accept(self)
+        
+    def visit_vardecls(self, d):
+        d.decl.accept(self)
+        if d.decls!=None:
+          d.decls.accept(self)
+
+    def visit_vardecl(self, d):
+        ST[d.id]=d.tp
+
+class Prog(BaseBox):
+    def __init__(self, decls,atrib):
+        self.decls = decls
+        self.atrib = atrib
+
+    def accept(self, visitor):
+        visitor.visit_prog(self)
+
+class VarDecls(BaseBox):
+    def __init__(self, decl,decls):
+        self.decl = decl
+        self.decls = decls
+
+    def accept(self, visitor):
+        visitor.visit_vardecls(self)
+
+class VarDecl(BaseBox):
+    def __init__(self, id,tp):
+        self.id = id
+        self.tp = tp
+        
+    def accept(self, visitor):
+        visitor.visit_vardecl(self)
+
+class Atrib(BaseBox):
+    def __init__(self, id,expr):
+        self.id = id
+        self.expr = expr
+
+    def accept(self, visitor):
+        visitor.visit_atrib(self)
+
+class Expr(BaseBox):
+    def accept(self, visitor):
+        method_name = 'visit_{}'.format(self.__class__.__name__.lower())
+        visit = getattr(visitor, method_name)
+        visit(self)
 
 class Program():
     def __init__(self):
@@ -88,7 +142,10 @@ class Program():
         if var_name[0].isnumeric(): raise ValueError
         var_name = var_name.replace(' ','')
         expression = ct.RemoveSpaces(expression)
-        if(expression.startswith("readln")):
+        if not var_name.startswith("int") or not var_name.startswith("string"):
+            if var_name not in self.variables.keys():
+                raise NameError
+        if expression.startswith("readln"):
             self.variables[var_name] = int(input())
         else:    
             self.variables[var_name] = self.CalculateExpression(self.ReplaceVars(expression))
@@ -197,7 +254,7 @@ class Program():
     
 def main():
     prog = Program()
-    prog.Run(sys.argv[1])
+    # prog.Run(sys.argv[1])
 
 if __name__ == "__main__":
     main()

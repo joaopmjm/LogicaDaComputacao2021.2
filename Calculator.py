@@ -10,6 +10,7 @@ SUB = '-'
 MUL = '*'
 DIV = '/'
 POT = '^'
+ST = {}
 
 class Node(BaseBox):
     def __init__(self, value):
