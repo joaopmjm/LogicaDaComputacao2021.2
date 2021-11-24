@@ -62,6 +62,81 @@ class Expr(BaseBox):
         visit = getattr(visitor, method_name)
         visit(self)
 
+class Decorator(Visitor):
+
+    def visit_prog(self, i):
+        i.atrib.accept(self)
+
+    def visit_atrib(self, i):
+        if i.id in ST:
+          i.id_decor_type=ST[i.id]
+        else:
+          raise AssertionError('id not declared')
+        i.expr.accept(self)
+        i.expr_decor_type=i.expr.decor_type
+
+    def visit_id(self, i):
+        if i.value in ST:
+          i.decor_type=ST[i.value]
+        else:
+          raise AssertionError('id not declared')
+
+
+    def visit_number(self, i):
+        i.decor_type="int"
+        
+
+    def visit_add(self, a):
+        a.left.accept(self)
+        a.right.accept(self)
+        if a.left.decor_type=="int" and a.right.decor_type=="int":
+          a.decor_type="int"
+          
+
+    def visit_sub(self, a):
+        a.left.accept(self)
+        a.right.accept(self)
+        if a.left.decor_type=="int" and a.right.decor_type=="int":
+          a.decor_type="int"
+
+    def visit_mul(self, a):
+        a.left.accept(self)
+        a.right.accept(self)
+        if a.left.decor_type=="int" and a.right.decor_type=="int":
+          a.decor_type="int"
+
+    def visit_div(self, a):
+        a.left.accept(self)
+        a.right.accept(self)
+        if a.left.decor_type=="int" and a.right.decor_type=="int":
+          a.decor_type="int"
+
+class TypeVerifier(Visitor):
+
+    def visit_prog(self, i):
+        i.atrib.accept(self)
+
+    def visit_atrib(self, i):
+        if i.id_decor_type!=i.expr_decor_type:
+          raise AssertionError('type error')
+
+    def visit_add(self, a):
+        if a.left.decor_type != a.right.decor_type:
+          raise AssertionError('type error')
+          
+
+    def visit_sub(self, a):
+        if a.left.decor_type != a.right.decor_type:
+          raise AssertionError('type error')
+
+    def visit_mul(self, a):
+        if a.left.decor_type != a.right.decor_type:
+          raise AssertionError('type error')
+
+    def visit_div(self, a):
+        if a.left.decor_type != a.right.decor_type:
+          raise AssertionError('type error')
+
 class Program():
     def __init__(self):
         self.commands = []
