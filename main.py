@@ -623,7 +623,6 @@ class Program():
             elif('=' in command):
                 self.Attribuition(command)
             elif command.startswith("int") or command.startswith("string"):
-                print(command)
                 self.Attribuition(command + "= 0")
             elif not command.isspace() and len(command)>0:
                 print("Error with command",command)
