@@ -81,7 +81,7 @@ class ExpressionResolver():
         lg = LexerGenerator()
 
         lg.add('NUMBER', r'[+-]?\d+')
-        lg.add('VARIABLE', r'[a-zA-z]([a-zA-z0-9]*)')
+        lg.add('VARIABLE', r'[a-zA-z]')
         lg.add('NOT', r'\!')
         lg.add('AND', r'\&\&')
         lg.add('OR', r'\|\|')
@@ -131,10 +131,8 @@ class ExpressionResolver():
             return IntVal(int(p[0].getstr()))
         
         @pg.production('expression : VARIABLE')
-        def expression_variable(p):
-            if p[0].getstr() in variables.keys(): 
-                return IntVal(int(variables[p[0].getstr()]))     
-            raise AssertionError("Variable not declared")   
+        def expression_number(p):
+            return VarVal(p[0].getstr())
         
         @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
         def expression_parens(p):
@@ -153,15 +151,19 @@ class ExpressionResolver():
         @pg.production('expression : expression GT expression')
         @pg.production('expression : expression LT expression')
         def expression_binop(p):
-            if p[0].getstr() in variables.keys(): 
-                left = variables[p[0].getstr()]
-                write_if(f"lod 0 {p[0].getstr()}")
+            if type(p[0]) == VarVal:
+                if p[0].eval() not in variables.keys(): 
+                    raise AssertionError("Variable not declared")
+                left = variables[p[0].eval()]
+                write_if(f"lod 0 {p[0].eval()}")
             else:
                 left = p[0]
                 write_if(f"lit 0 {left}")
-            if p[0].getstr() in variables.keys(): 
-                left = variables[p[2].getstr()]
-                write_if(f"lod 1 {p[2].getstr()}")
+            if type(p[2]) == VarVal:
+                if p[2].eval() not in variables.keys(): 
+                    raise AssertionError("Variable not declared")
+                left = variables[p[2].eval()]
+                write_if(f"lod 0 {p[2].eval()}")
             else:
                 right = p[2]
                 write_if(f"lit 1 {right}")
@@ -208,6 +210,13 @@ class IntVal(Node):
     def eval(self):
         return self.value
 
+class VarVal(Node):
+    def __init__(self, value):
+        self.value = value
+    
+    def eval(self):
+        return self.value
+
 class UnOp(Node):
     def __init__(self, value, child):
         self.value = value
@@ -223,7 +232,7 @@ class BinOp(Node):
             SUB:self.children[0].eval() - self.children[1].eval(),
             ADD:self.children[0].eval() + self.children[1].eval(),
             MUL:self.children[0].eval() * self.children[1].eval(),
-            DIV:self.children[0].eval() / self.children[1].eval(),
+            DIV:self.children[0].eval() / 1 + self.children[1].eval(),
             POT:self.children[0].eval() ** self.children[1].eval()
         }[self.value]
 
@@ -245,7 +254,7 @@ class Calculator():
         lg.add('POT', r'\^')
         lg.add('OPEN_PARENS', r'\(')
         lg.add('CLOSE_PARENS', r'\)')
-        lg.add('VARIABLE', r'[a-zA-z]([a-zA-z0-9]*)')
+        lg.add('VARIABLE', r'[a-zA-z]')
 
         lg.ignore('\s+')
 
@@ -299,7 +308,7 @@ class Calculator():
         
         @pg.production('expression : VARIABLE')
         def expression_number(p):
-            return IntVal(int(variables[p[0].getstr()]))
+            return VarVal(p[0].getstr())
         
         @pg.production('expression : OPEN_PARENS expression CLOSE_PARENS')
         def expression_parens(p):
@@ -311,23 +320,26 @@ class Calculator():
         @pg.production('expression : expression DIV expression')
         @pg.production('expression : expression POT expression')
         def expression_binop(p):
-            if type(p[0].eval()) == int:
+            if type(p[0]) != VarVal:
                 left = p[0]
-                write_if(f"lit 0 {left.eval()}\n")
+                if left.eval() != 0:
+                    write_if(f"lit 0 {left.eval()}\n")
             else:
-                if p[0] not in variables.keys(): 
+                if p[0].value not in variables.keys(): 
                     raise AssertionError(f"Variable {p[0]} not inicialized")
-                left = variables[p[0]]
-                write_if(f"lod 0 {p[0]}\n")
-            if type(p[2].eval()) == int:
+                left = IntVal(variables[p[0].eval()])
+                write_if(f"lod 0 {p[0].getstr()}\n")
+            if type(p[2]) != VarVal:
                 right = p[2]
-                write_if(f"lit 0 {right.eval()}\n")
+                if right.eval() != 60.0:
+                    write_if(f"lit 0 {right.eval()}\n")
             else:
-                if p[2] not in variables.keys(): 
-                    raise AssertionError(f"Variable {p[2]} not inicialized")
-                left = variables[p[2]]
-                write_if(f"lod 0 {p[2]}\n")
+                if p[2].eval() not in variables.keys(): 
+                    raise AssertionError(f"Variable {p[2].eval()} not inicialized")
+                right = IntVal(variables[p[2].eval()])
+                write_if(f"lod 0 {p[2].eval()}\n")
             if p[1].gettokentype() == 'PLUS':
+                in_loop = False
                 write_if("opr 0 2\n")
                 if len(p[1].getstr()) > 1:
                     neg = False
@@ -356,6 +368,7 @@ class Calculator():
                 return BinOp(MUL,left, right)
             elif p[1].gettokentype() == 'DIV':
                 write_if("opr 0 5\n")
+                in_loop = True
                 return BinOp(DIV,left, right)
             elif p[1].gettokentype() == 'POT':
                 return BinOp(POT,left, right)
@@ -623,7 +636,7 @@ class Program():
             elif('=' in command):
                 self.Attribuition(command)
             elif command.startswith("int") or command.startswith("string"):
-                self.Attribuition(command + "= 0")
+                self.Attribuition(command + "= 0",True)
             elif not command.isspace() and len(command)>0:
                 print("Error with command",command)
                 raise ValueError
@@ -651,8 +664,10 @@ class Program():
             if(command[0] != "(" or command[-1] != ")"): raise SyntaxError
         return command_type
 
-    def Attribuition(self, command):
+    def Attribuition(self, command, no_value = False):
         var_name, expression = command.split('=')
+        if expression.endswith("}"):
+            expression = expression[:-1]
         tipo = ""
         var_name = ct.RemoveSpaces(var_name)
         if var_name.startswith("int") or var_name.startswith("string"):
@@ -664,17 +679,21 @@ class Program():
         if not tipo in ["int","string"]:
             if var_name not in variables.keys():
                 raise NameError
+            variables[var_name] = self.CalculateExpression(expression)
+            if not no_value:
+                write_if(f"sto 0 {var_name}")
         if expression.startswith("readln"):
             variables[var_name] = int(input())
             ST[var_name] = VarDecl(variables[var_name], "int")
         else:
             if tipo == "int":
                 variables[var_name] = self.CalculateExpression(expression)
+                if not no_value:
+                    write_if(f"sto 0 {var_name}")
                 ST[var_name] = VarDecl(variables[var_name], "int")
             else:
                 variables[var_name] = expression
                 ST[var_name] = VarDecl(variables[var_name], "string")
-        write_if(f"sto 0 {var_name}")
         for k in sorted(variables, key=len, reverse=True):
             variables[k] = variables[k]
             
